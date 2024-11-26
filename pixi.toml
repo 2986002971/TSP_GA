@@ -1,0 +1,21 @@
+[project]
+authors = ["horned_axe <horned_axe@proton.me>"]
+channels = ["nvidia/label/cuda-12.4.0", "nvidia", "conda-forge", "pytorch"]
+description = "Add a short description here"
+name = "TSP_GA"
+platforms = ["linux-64"]
+version = "0.1.0"
+
+[tasks]
+
+[dependencies]
+python = "3.12"
+pip = "*"
+setuptools = "*"
+numpy = "*"
+cuda = {version = "*", channel = "nvidia/label/cuda-12.4.0"}
+pytorch = {version = "*", channel = "pytorch"}
+pytorch-cuda = {version = "12.4", channel = "pytorch"}
+
+[pypi-dependencies]
+triton = "*"
