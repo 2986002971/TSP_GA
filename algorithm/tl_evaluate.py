@@ -1,11 +1,21 @@
 import itertools
+import time
 
 import torch
 import triton
 import triton.language as tl
-from map_data import simplified_matrix
+from data.medium_data import simplified_matrix
 
 
+@triton.autotune(
+    configs=[
+        triton.Config({"BLOCK_SIZE": 32}, num_warps=4),
+        triton.Config({"BLOCK_SIZE": 64}, num_warps=8),
+        triton.Config({"BLOCK_SIZE": 128}, num_warps=8),
+        triton.Config({"BLOCK_SIZE": 256}, num_warps=16),
+    ],
+    key=["n_paths", "n_cities"],  # 根据路径数量和城市数量选择最优配置
+)
 @triton.jit
 def evaluate_paths_kernel(
     dist_matrix_ptr,  # 距离矩阵指针 [n_cities, n_cities]
@@ -14,8 +24,6 @@ def evaluate_paths_kernel(
     next_power_of_2: tl.constexpr,  # 城市数量向上取整的2的幂
     n_paths: tl.constexpr,  # 总路径数量
     output_ptr,  # 输出指针 [n_paths, 1]
-    best_dist_ptr,  # 输出最短距离指针 [1]
-    best_path_ptr,  # 输出最佳路径指针 [n_cities]
     BLOCK_SIZE: tl.constexpr,
 ):
     """
@@ -76,17 +84,6 @@ def evaluate_paths_kernel(
     # 存储每条路径的距离
     tl.store(output_ptr + offsets, distances, mask=mask)
 
-    # 找出最短距离和对应的路径
-    min_dist = tl.min(distances, axis=0)
-    min_idx = tl.argmin(distances, axis=0)
-
-    # 只有第一个线程写入结果
-    if pid == 0:
-        tl.store(best_dist_ptr, min_dist)
-        best_path_start = path_start[min_idx]
-        path_vals = tl.load(paths_ptr + best_path_start + city_offsets)
-        tl.store(best_path_ptr + city_offsets, path_vals)
-
 
 def find_shortest_path(paths):
     dist_matrix = torch.tensor(simplified_matrix, dtype=torch.float32, device="cuda")
@@ -94,35 +91,42 @@ def find_shortest_path(paths):
     n_cities = len(paths[0])
     next_power_of_2 = 1 << (n_cities - 1).bit_length()
     n_paths = len(paths)
-    output_ptr = torch.zeros(n_paths, dtype=torch.float32, device="cuda")
-    best_distance = torch.zeros(1, dtype=torch.float32, device="cuda")
-    best_path = torch.zeros(n_cities, dtype=torch.int32, device="cuda")
+    all_distances = torch.zeros(n_paths, dtype=torch.float32, device="cuda")
 
-    BLOCK_SIZE = 32
-    grid = (triton.cdiv(n_paths, BLOCK_SIZE),)
+    grid = (triton.cdiv(n_paths, 32),)  # 使用最小的block size来计算grid
 
     evaluate_paths_kernel[grid](
-        dist_matrix_ptr=dist_matrix.data_ptr(),
-        paths_ptr=paths_tensor.data_ptr(),
+        dist_matrix_ptr=dist_matrix,
+        paths_ptr=paths_tensor,
         n_cities=n_cities,
         next_power_of_2=next_power_of_2,
         n_paths=n_paths,
-        output_ptr=output_ptr.data_ptr(),
-        best_dist_ptr=best_distance.data_ptr(),
-        best_path_ptr=best_path.data_ptr(),
-        BLOCK_SIZE=BLOCK_SIZE,
+        output_ptr=all_distances,
     )
 
-    return best_distance.item(), best_path.cpu().numpy()
+    # 在主机端找出最短路径
+    min_idx = torch.argmin(all_distances).item()
+    min_distance = all_distances[min_idx].item()
+    best_path = paths_tensor[min_idx].cpu().numpy()
+
+    return best_path, min_distance
 
 
 if __name__ == "__main__":
-    # 生成所有可能的路径排列（对于10个城市）
-    n_cities = 10
-    city_indices = list(range(n_cities))
-    all_paths = list(itertools.permutations(city_indices))
+    start_time = time.time()
 
-    # 找出最短路径
-    min_distance, best_path = find_shortest_path(all_paths)
+    # 生成所有可能的路径排列
+    n_cities = len(simplified_matrix)
+    city_indices = list(range(n_cities))
+    print(f"城市数量: {n_cities}")
+
+    all_paths = list(itertools.permutations(city_indices))
+    print("路径组生成完毕")
+
+    best_path, min_distance = find_shortest_path(all_paths)
+
+    end_time = time.time()
+    print(f"运行时间: {end_time - start_time:.2f}秒")
+
     print(f"最短路径: {best_path}")
     print(f"最短距离: {min_distance}")
