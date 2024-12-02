@@ -4,7 +4,7 @@ import time
 import torch
 import triton
 import triton.language as tl
-from data.medium_data import simplified_matrix
+from data.simplified_data import simplified_matrix
 
 
 @triton.autotune(

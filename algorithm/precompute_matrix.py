@@ -18,7 +18,7 @@ def calculate_distance_matrix(coordinates):
     return distances.tolist()
 
 
-n_cities = 11
+n_cities = 15
 distance_matrix = calculate_distance_matrix(map_data[:n_cities])
 
 # 将结果写入到一个新的Python文件

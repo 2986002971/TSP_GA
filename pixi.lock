@@ -6,6 +6,8 @@ environments:
     - url: https://conda.anaconda.org/nvidia/
     - url: https://conda.anaconda.org/conda-forge/
     - url: https://conda.anaconda.org/pytorch/
+    indexes:
+    - https://pypi.org/simple
     packages:
       linux-64:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/_libgcc_mutex-0.1-conda_forge.tar.bz2
@@ -137,6 +139,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/wheel-0.45.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/xz-5.2.6-h166bdaf_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/linux-64/yaml-0.2.5-h7f98852_2.tar.bz2
+      - pypi: cuda_exhaustion/dist/cuda_tsp_solver-0.1-cp312-cp312-linux_x86_64.whl
 packages:
 - kind: conda
   name: _libgcc_mutex
@@ -740,6 +743,10 @@ packages:
   platform: linux
   size: 1866
   timestamp: 1709167875875
+- kind: pypi
+  name: cuda-tsp-solver
+  version: '0.1'
+  path: cuda_exhaustion/dist/cuda_tsp_solver-0.1-cp312-cp312-linux_x86_64.whl
 - kind: conda
   name: cuda-visual-tools
   version: 12.4.0

@@ -19,3 +19,4 @@ pytorch-cuda = {version = "12.4", channel = "pytorch"}
 
 [pypi-dependencies]
 triton = "*"
+cuda_tsp_solver = {path = "cuda_exhaustion/dist/cuda_tsp_solver-0.1-cp312-cp312-linux_x86_64.whl"}
