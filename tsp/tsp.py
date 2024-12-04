@@ -162,8 +162,4 @@ class TSPGeneticSolver:
 
             self.population = new_population
 
-            # 每100代输出一次进度
-            if generation % 100 == 0:
-                print(f"Generation {generation}: Best distance = {best_distance:.2f}")
-
         return best_path, best_distance, history_distances

@@ -31,7 +31,7 @@ if st.sidebar.button("开始优化"):
     col1, col2 = st.columns(2)
 
     with col1:
-        st.subheader("Optimal Path Map")
+        st.subheader("最优路径图")
         plt.figure(figsize=(8, 6))
         coords = np.array(map_data)
         plt.scatter(coords[:, 0], coords[:, 1], color="red", label="Cities")
@@ -61,7 +61,7 @@ if st.sidebar.button("开始优化"):
         st.write(f"Shortest Distance: {best_distance:.2f}")
 
     with col2:
-        st.subheader("Optimization Process")
+        st.subheader("优化过程")
         plt.figure(figsize=(8, 6))
         plt.plot(history, label="Shortest Distance")
         plt.title("Convergence Curve")
